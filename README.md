@@ -1,6 +1,6 @@
 # Climate Data Extractor (CDE)
 
-CDE is a Flask-based platform for extracting, analysing and visualising CHIRPS and ERA5 climate datasets stored in Zarr format. It supports point extraction, climate indices, plots, maps, Excel outputs and QR-based verification.
+CDE is a Flask-based platform for extracting, analysing and visualising CHIRPS and ERA5 climate datasets stored in NetCDF and Zarr format. It supports point extraction, climate indices, plots, maps, Excel outputs and QR-based verification.
 
 ## Public-build scope
 
