@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card small-card">
+  <h1>Edit User</h1>
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label>Full Name</label><input name="full_name" value="{{ row.full_name }}" required></div>
+    <div class="field"><label>Email</label><input type="email" name="email" value="{{ row.email }}" required></div>
+    <div class="field"><label>Phone</label><input name="phone" value="{{ row.phone or '' }}"></div>
+    <div class="field"><label>Role</label><select name="role"><option value="user" {% if row.role=='user' %}selected{% endif %}>User</option><option value="admin" {% if row.role=='admin' %}selected{% endif %}>Admin</option></select></div>
+    <div class="field"><label>Status</label><select name="status"><option value="1" {% if row.status %}selected{% endif %}>Active</option><option value="0" {% if not row.status %}selected{% endif %}>Disabled</option></select></div>
+    <div class="actions"><button>Save Changes</button><a class="button secondary" href="{{ url_for('users') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

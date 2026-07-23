@@ -1,0 +1,14 @@
+<nav class="workspace-tabs" aria-label="Data Extractor services">
+  <a class="workspace-tab {% if active_service == 'extraction' %}active{% endif %}" href="{{ url_for('extractor') }}" {% if active_service == 'extraction' %}aria-current="page"{% endif %}>
+    <span class="workspace-tab-number">1</span><span>Extract Data</span>
+  </a>
+  <a class="workspace-tab {% if active_service == 'visual' %}active{% endif %}" href="{{ url_for('plots', service='visual') }}" {% if active_service == 'visual' %}aria-current="page"{% endif %}>
+    <span class="workspace-tab-number">2</span><span>Create Plot or Map</span>
+  </a>
+  <a class="workspace-tab {% if active_service == 'analysis' %}active{% endif %}" href="{{ url_for('plots', service='analysis') }}" {% if active_service == 'analysis' %}aria-current="page"{% endif %}>
+    <span class="workspace-tab-number">3</span><span>Climate Analysis</span>
+  </a>
+  <a class="workspace-tab {% if active_service == 'index' %}active{% endif %}" href="{{ url_for('plots', service='index') }}" {% if active_service == 'index' %}aria-current="page"{% endif %}>
+    <span class="workspace-tab-number">4</span><span>Climate Indices</span>
+  </a>
+</nav>

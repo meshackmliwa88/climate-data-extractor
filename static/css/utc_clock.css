@@ -1,0 +1,68 @@
+:root {
+    --cde-green: #0B8F70;
+    --cde-green-dark: #06624E;
+    --cde-green-light: #E8FFF8;
+}
+
+.utc-clock-box {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 9999;
+    width: 166px;
+    min-height: 82px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--cde-green), var(--cde-green-dark));
+    color: #ffffff;
+    box-shadow: 0 10px 28px rgba(11, 143, 112, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.utc-clock-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1;
+    color: rgba(255,255,255,0.92);
+    margin-bottom: 7px;
+}
+
+.utc-clock-title::after {
+    content: "  ● LIVE";
+    font-size: 10px;
+    font-weight: 900;
+    color: #DFFFF5;
+    letter-spacing: 0.5px;
+}
+
+.utc-clock-time {
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.utc-clock-date {
+    margin-top: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.92);
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .utc-clock-box {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin: 10px;
+        width: 160px;
+    }
+}

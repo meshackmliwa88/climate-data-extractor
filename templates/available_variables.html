@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card available-variables-card">
+  <div class="section-heading compact-heading">
+    <div>
+      <h1>Available Variables</h1>
+    </div>
+  </div>
+
+  <div class="available-variable-list">
+    {% for key, src in sources.items() %}
+    <div class="available-variable-row">
+      <div class="available-variable-main">
+        <div class="variable-card-head">
+          <h3>{{ src.label }}</h3>
+          <span class="pill light">{{ key }}</span>
+        </div>
+        <p class="muted">{{ src.description }}</p>
+      </div>
+      <div class="available-variable-details">
+        <div class="row-detail-block">
+          <span class="meta-label">Variables</span>
+          <span class="meta-value">
+            {% for vkey, var in src.variables.items() %}
+              {{ var.label }}{% if var.unit %} ({{ var.unit }}){% endif %}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </span>
+        </div>
+        <div class="row-detail-block">
+          <span class="meta-label">Temporal Outputs</span>
+          <span class="meta-value">{{ src.supported_frequencies|join(', ') }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card compact-card professional-product-workspace simple-workspace plot-workspace">
+  <div class="section-heading extractor-heading compact-heading workspace-heading">
+    <div>
+      <span class="eyebrow">TMA Climate Data Extractor</span>
+      {% if active_service == 'visual' %}
+      <h1>Create Plot or Map</h1>
+      {% elif active_service == 'analysis' %}
+      <h1>Climate Analysis</h1>
+      {% else %}
+      <h1>Climate Indices</h1>
+      {% endif %}
+    </div>
+  </div>
+
+  {% include "partials/workspace_tabs.html" %}
+
+  {% if not result_items %}
+  <div class="workspace-idle-note" role="status">No dataset is opened and no plot is generated until you press the action button below.</div>
+  {% endif %}
+
+  {% if field_errors.generation %}<div class="alert error">{{ field_errors.generation }}</div>{% endif %}
+
+  <form method="post" class="product-form compact-product-form" id="unifiedProductForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="workspace_service" value="{{ active_service }}">
+    <input type="hidden" name="generate_requested" value="1">
+
+    <div class="request-section dataset-first-section">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">1</span><h3>Dataset and Data Type</h3></div>
+      </div>
+
+      <div class="grid extractor-selection-grid product-dataset-grid">
+        <div class="field">
+          <label for="plotDataset">Dataset</label>
+          <select name="plot_dataset" id="plotDataset" required>
+            {% for key, src in dataset_sources.items() %}
+            <option value="{{ key }}" data-resolutions="{{ src.available_resolutions|join(',') }}" data-plot-types="{{ src.available_plot_types|join(',') }}" {% if form_data.get('plot_dataset') == key %}selected{% endif %}>{{ src.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if active_service != 'index' %}
+        <div class="field">
+          <label>Temporal Resolution</label>
+          <div class="choice-grid resolution-choice-grid compact-resolution-grid" id="resolutionChoices">
+            {% for key, label in resolution_labels.items() %}
+            <label class="choice-option" data-resolution="{{ key }}"><input type="checkbox" name="plot_resolutions" value="{{ key }}" {% if key in selected_resolutions %}checked{% endif %}> <span>{{ label }}</span></label>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field">
+          <label for="indexResolution">Temporal Resolution</label>
+          <select name="index_resolution" id="indexResolution"></select>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if active_service != 'index' %}
+      <div class="field variable-selection-field dataset-dependent-field">
+        <label>Weather Elements</label>
+        <div class="choice-grid" id="variableChoices"></div>
+        <small class="field-help comparison-help hidden">Select at least two elements. A scatter plot requires exactly two.</small>
+        <small class="field-help wind-rose-help hidden">Wind speed and wind direction are used automatically.</small>
+      </div>
+      <div class="field season-selection-field dataset-dependent-field">
+        <label>Seasons</label>
+        <div class="choice-grid season-choice-grid">
+          {% for key, months in seasons.items() %}
+          <label class="choice-option"><input type="checkbox" name="plot_seasons" value="{{ key }}" {% if key in selected_seasons %}checked{% endif %}> <span>{{ key }}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="product-grid compact-product-grid index-dataset-controls dataset-dependent-field">
+        <div class="field span-6">
+          <label for="indexType">Climate Index</label>
+          <select name="index_type" id="indexType"></select>
+        </div>
+        <div class="field span-6 index-month-filter">
+          <label for="indexSeason">Months / Season</label>
+          <select name="index_season" id="indexSeason">
+            <option value="ANNUAL" {% if form_data.get('index_season') == 'ANNUAL' %}selected{% endif %}>All Months</option>
+            {% for key, months in seasons.items() %}<option value="{{ key }}" {% if form_data.get('index_season') == key %}selected{% endif %}>{{ key }} — {{ months|join(', ') }}</option>{% endfor %}
+            <option value="CUSTOM" {% if form_data.get('index_season') == 'CUSTOM' %}selected{% endif %}>Custom Months</option>
+          </select>
+        </div>
+        <div class="field span-4 index-custom-months"><label>Custom Months</label><input name="custom_months" value="{{ form_data.get('custom_months','') }}"></div>
+        <div class="field span-4 index-custom-years"><label>Custom Years</label><input name="index_custom_years" value="{{ form_data.get('index_custom_years','') }}"></div>
+        <div class="field span-4 index-rainy-threshold"><label>Wet Day (mm)</label><input type="number" step="0.1" name="rainy_threshold" value="{{ form_data.get('rainy_threshold','1') }}"></div>
+        <div class="field span-4 index-heavy-threshold"><label>Heavy Precipitation (mm)</label><input type="number" step="0.1" name="heavy_threshold" value="{{ form_data.get('heavy_threshold','50') }}"></div>
+        <div class="field span-4 index-very-heavy-threshold"><label>Very Heavy Precipitation (mm)</label><input type="number" step="0.1" name="very_heavy_threshold" value="{{ form_data.get('very_heavy_threshold','100') }}"></div>
+        <div class="field span-4 index-heat-threshold"><label>Hot Day (°C)</label><input type="number" step="0.1" name="heat_threshold" value="{{ form_data.get('heat_threshold','35') }}"></div>
+        <div class="field span-4 index-warm-threshold"><label>Hot Night (°C)</label><input type="number" step="0.1" name="warm_threshold" value="{{ form_data.get('warm_threshold','30') }}"></div>
+        <div class="field span-4 index-cold-threshold"><label>Cold Threshold (°C)</label><input type="number" step="0.1" name="cold_threshold" value="{{ form_data.get('cold_threshold','15') }}"></div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="request-section product-choice-section">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">2</span><h3>{% if active_service == 'visual' %}Plot or Map{% elif active_service == 'analysis' %}Analysis{% else %}Index Plot{% endif %}</h3></div>
+      </div>
+      <div class="product-grid compact-product-grid product-choice-grid">
+        {% if active_service == 'visual' %}
+        <div class="field span-6">
+          <label for="visualType">Kind of Plot</label>
+          <select name="visual_type" id="visualType">
+            <optgroup label="Time and comparison">
+              <option value="time_series" {% if form_data.get('visual_type') == 'time_series' %}selected{% endif %}>Time Series Line Plot</option>
+              <option value="bar" {% if form_data.get('visual_type') == 'bar' %}selected{% endif %}>Comparative Bar Chart</option>
+              <option value="area" {% if form_data.get('visual_type') == 'area' %}selected{% endif %}>Accumulated Area Plot</option>
+              <option value="multi_line" {% if form_data.get('visual_type') == 'multi_line' %}selected{% endif %}>Multi-Element Comparison Plot</option>
+              <option value="step_plot" {% if form_data.get('visual_type') == 'step_plot' %}selected{% endif %}>Step Line Plot</option>
+              <option value="lollipop" {% if form_data.get('visual_type') == 'lollipop' %}selected{% endif %}>Lollipop Plot</option>
+              <option value="rolling_mean" {% if form_data.get('visual_type') == 'rolling_mean' %}selected{% endif %}>Rolling Mean Plot</option>
+              <option value="cumulative_total" {% if form_data.get('visual_type') == 'cumulative_total' %}selected{% endif %}>Cumulative Total Plot</option>
+              <option value="diurnal_cycle" {% if form_data.get('visual_type') == 'diurnal_cycle' %}selected{% endif %}>Diurnal Temperature / Hourly Cycle Plot</option>
+            </optgroup>
+            <optgroup label="Climatology, trends and anomalies">
+              <option value="monthly_climatology" {% if form_data.get('visual_type') == 'monthly_climatology' %}selected{% endif %}>Average Monthly Total / Mean (Jan–Dec)</option>
+              <option value="temperature_monthly_profile" {% if form_data.get('visual_type') == 'temperature_monthly_profile' %}selected{% endif %}>Combined Mean, Minimum and Maximum Monthly Profile</option>
+              <option value="seasonal_profile" {% if form_data.get('visual_type') == 'seasonal_profile' %}selected{% endif %}>Seasonal Profile Plot</option>
+              <option value="annual_trend" {% if form_data.get('visual_type') == 'annual_trend' %}selected{% endif %}>Annual Trend Plot</option>
+              <option value="anomaly" {% if form_data.get('visual_type') == 'anomaly' %}selected{% endif %}>Climate Anomaly Plot</option>
+              <option value="standardized_anomaly" {% if form_data.get('visual_type') == 'standardized_anomaly' %}selected{% endif %}>Standardized Anomaly (Z-Score) Plot</option>
+              <option value="percentile_band" {% if form_data.get('visual_type') == 'percentile_band' %}selected{% endif %}>Monthly Percentile Envelope Plot</option>
+            </optgroup>
+            <optgroup label="Spatial and heat maps">
+              <option value="spatial_map" {% if form_data.get('visual_type') == 'spatial_map' %}selected{% endif %}>Spatial Distribution Map</option>
+              <option value="spatial_climatology" {% if form_data.get('visual_type') == 'spatial_climatology' %}selected{% endif %}>Spatial Climatology Map</option>
+              <option value="spatial_monthly_climatology" {% if form_data.get('visual_type') == 'spatial_monthly_climatology' %}selected{% endif %}>Monthly Spatial Climatology Maps (Jan–Dec)</option>
+              <option value="spatial_annual_series" {% if form_data.get('visual_type') == 'spatial_annual_series' %}selected{% endif %}>Annual Spatial Maps for Selected Years</option>
+              <option value="spatial_seasonal_climatology" {% if form_data.get('visual_type') == 'spatial_seasonal_climatology' %}selected{% endif %}>Seasonal Spatial Climatology Maps</option>
+              <option value="spatial_std_map" {% if form_data.get('visual_type') == 'spatial_std_map' %}selected{% endif %}>Spatial Standard Deviation Map</option>
+              <option value="spatial_cv_map" {% if form_data.get('visual_type') == 'spatial_cv_map' %}selected{% endif %}>Spatial Coefficient of Variation Map</option>
+              <option value="heatmap" {% if form_data.get('visual_type') == 'heatmap' %}selected{% endif %}>Monthly–Annual Heat Map</option>
+            </optgroup>
+            <optgroup label="Standard deviation and variability">
+              <option value="mean_std_band" {% if form_data.get('visual_type') == 'mean_std_band' %}selected{% endif %}>Mean with Standard Deviation Band</option>
+              <option value="std_error_bars" {% if form_data.get('visual_type') == 'std_error_bars' %}selected{% endif %}>Mean with Standard Deviation Error Bars</option>
+              <option value="standard_deviation" {% if form_data.get('visual_type') == 'standard_deviation' %}selected{% endif %}>Standard Deviation Profile</option>
+              <option value="coefficient_variation" {% if form_data.get('visual_type') == 'coefficient_variation' %}selected{% endif %}>Coefficient of Variation Profile</option>
+            </optgroup>
+            <optgroup label="Distribution, extremes and relationships">
+              <option value="histogram" {% if form_data.get('visual_type') == 'histogram' %}selected{% endif %}>Frequency Distribution Histogram</option>
+              <option value="box" {% if form_data.get('visual_type') == 'box' %}selected{% endif %}>Monthly Box Plot</option>
+              <option value="extreme_value" {% if form_data.get('visual_type') == 'extreme_value' %}selected{% endif %}>Annual Extreme Value Plot</option>
+              <option value="scatter" {% if form_data.get('visual_type') == 'scatter' %}selected{% endif %}>Relationship Scatter Plot</option>
+              <option value="wind_rose" {% if form_data.get('visual_type') == 'wind_rose' %}selected{% endif %}>Wind Rose</option>
+              <option value="violin" {% if form_data.get('visual_type') == 'violin' %}selected{% endif %}>Monthly Violin Distribution Plot</option>
+              <option value="exceedance_curve" {% if form_data.get('visual_type') == 'exceedance_curve' %}selected{% endif %}>Exceedance Probability Curve</option>
+              <option value="ecdf" {% if form_data.get('visual_type') == 'ecdf' %}selected{% endif %}>Empirical Cumulative Distribution Plot</option>
+              <option value="rank_plot" {% if form_data.get('visual_type') == 'rank_plot' %}selected{% endif %}>Ranked Value Plot</option>
+            </optgroup>
+          </select>
+        </div>
+        {% elif active_service == 'analysis' %}
+        <div class="field span-6">
+          <label for="analysisType">Climate Analysis</label>
+          <select name="analysis_type" id="analysisType">
+            <option value="statistical_summary" {% if form_data.get('analysis_type') == 'statistical_summary' %}selected{% endif %}>Descriptive Statistical Summary</option>
+            <option value="climatology_profile" {% if form_data.get('analysis_type') == 'climatology_profile' %}selected{% endif %}>Climatology and Seasonal Profile</option>
+            <option value="variability_analysis" {% if form_data.get('analysis_type') == 'variability_analysis' %}selected{% endif %}>Standard Deviation and Variability Assessment</option>
+            <option value="trend_variability" {% if form_data.get('analysis_type') == 'trend_variability' %}selected{% endif %}>Trend and Variability Assessment</option>
+            <option value="extremes_analysis" {% if form_data.get('analysis_type') == 'extremes_analysis' %}selected{% endif %}>Extremes and Percentile Assessment</option>
+            <option value="comprehensive_analysis" {% if form_data.get('analysis_type') == 'comprehensive_analysis' %}selected{% endif %}>Comprehensive Climate Analysis</option>
+            <option value="spatial_climatology_analysis" {% if form_data.get('analysis_type') == 'spatial_climatology_analysis' %}selected{% endif %}>Spatial Climatology Analysis (Monthly, Annual and Seasonal Maps)</option>
+            <option value="data_quality_analysis" {% if form_data.get('analysis_type') == 'data_quality_analysis' %}selected{% endif %}>Data Quality and Completeness Assessment</option>
+            <option value="distribution_analysis" {% if form_data.get('analysis_type') == 'distribution_analysis' %}selected{% endif %}>Distribution and Normality Assessment</option>
+            <option value="percentile_analysis" {% if form_data.get('analysis_type') == 'percentile_analysis' %}selected{% endif %}>Percentile and Threshold Assessment</option>
+            <option value="monthly_variability_analysis" {% if form_data.get('analysis_type') == 'monthly_variability_analysis' %}selected{% endif %}>Monthly Variability Assessment</option>
+            <option value="seasonal_comparison_analysis" {% if form_data.get('analysis_type') == 'seasonal_comparison_analysis' %}selected{% endif %}>Seasonal Comparison Assessment</option>
+            <option value="decadal_change_analysis" {% if form_data.get('analysis_type') == 'decadal_change_analysis' %}selected{% endif %}>Decadal Change Assessment</option>
+            <option value="anomaly_analysis" {% if form_data.get('analysis_type') == 'anomaly_analysis' %}selected{% endif %}>Anomaly and Standardized Anomaly Assessment</option>
+            <option value="trend_significance_analysis" {% if form_data.get('analysis_type') == 'trend_significance_analysis' %}selected{% endif %}>Trend Significance Assessment</option>
+            <option value="long_term_annual_trend_analysis" {% if form_data.get('analysis_type') == 'long_term_annual_trend_analysis' %}selected{% endif %}>Long-Term Annual Trend Analysis (Equation and R²)</option>
+            <option value="extreme_frequency_analysis" {% if form_data.get('analysis_type') == 'extreme_frequency_analysis' %}selected{% endif %}>Extreme Event Frequency Assessment</option>
+          </select>
+        </div>
+        {% else %}
+        <div class="field span-6">
+          <label for="indexPlotType">Kind of Plot</label>
+          <select name="index_plot_type" id="indexPlotType"></select>
+        </div>
+        {% endif %}
+        <div class="field span-6">
+          <label for="customPlotTitle">{% if active_service == 'visual' %}Plot / Map Title{% elif active_service == 'analysis' %}Analysis Title{% else %}Climate Index Title{% endif %} (optional)</label>
+          <input type="text" id="customPlotTitle" name="custom_plot_title" maxlength="180" value="{{ form_data.get('custom_plot_title','') }}" placeholder="Leave blank to use the complete automatic title">
+        </div>
+        {% if active_service == 'analysis' %}<input type="hidden" name="include_plot" value="1">{% endif %}
+      </div>
+    </div>
+
+    {% if active_service in ['visual', 'analysis'] %}
+    <div class="special-product-panel map-configuration hidden" id="mapConfiguration">
+      <div class="panel-title-row"><div><strong>Map Period, Surface and Boundaries</strong></div></div>
+      <div class="product-grid compact-product-grid">
+        <input type="hidden" name="map_period_mode" value="custom">
+        <div class="field span-3"><label for="mapMonthSelection">Month Selection</label><select name="map_month_selection" id="mapMonthSelection"><option value="all" {% if form_data.get('map_month_selection','all') == 'all' %}selected{% endif %}>All Months (January–December)</option><option value="single" {% if form_data.get('map_month_selection') == 'single' %}selected{% endif %}>Specific Month</option><option value="season" {% if form_data.get('map_month_selection') == 'season' %}selected{% endif %}>Specific Season</option><option value="custom" {% if form_data.get('map_month_selection') == 'custom' %}selected{% endif %}>Custom Months</option></select></div>
+        <div class="field span-3 map-month-field"><label>Month</label><select name="map_month">{% for m in range(1,13) %}<option value="{{ '%02d'|format(m) }}" {% if form_data.get('map_month','01') == '%02d'|format(m) %}selected{% endif %}>{{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}</option>{% endfor %}</select></div>
+        <div class="field span-3 map-season-field"><label>Season</label><select name="map_season">{% for key in seasons.keys() %}<option value="{{ key }}" {% if form_data.get('map_season') == key %}selected{% endif %}>{{ key }}</option>{% endfor %}</select></div>
+        <div class="field span-3 map-custom-months-field"><label>Custom Months</label><input name="map_custom_months" id="mapCustomMonths" value="{{ form_data.get('map_custom_months','1,2,3') }}"></div>
+        <div class="field span-3"><label for="mapYearSelection">Year Selection</label><select name="map_year_selection" id="mapYearSelection"><option value="single" {% if form_data.get('map_year_selection') == 'single' %}selected{% endif %}>Specific Year</option><option value="range" {% if form_data.get('map_year_selection','range') == 'range' %}selected{% endif %}>Start–End Year Range</option><option value="custom" {% if form_data.get('map_year_selection') == 'custom' %}selected{% endif %}>Custom Years</option></select></div>
+        <div class="field span-2 map-year-field"><label>Year</label><input type="number" name="map_year" value="{{ form_data.get('map_year','2020') }}"></div>
+        <div class="field span-2 map-year-range-field"><label>Start Year</label><input type="number" name="map_start_year" value="{{ form_data.get('map_start_year',form_data.get('start_year','1991')) }}"></div>
+        <div class="field span-2 map-year-range-field"><label>End Year</label><input type="number" name="map_end_year" value="{{ form_data.get('map_end_year',form_data.get('end_year','2020')) }}"></div>
+        <div class="field span-4 map-custom-years-field"><label>Custom Years</label><input name="map_custom_years" value="{{ form_data.get('map_custom_years','') }}"></div>
+        <div class="field span-3"><label>Map Surface</label><select name="map_render_style" id="mapRenderStyle"><option value="grid" selected>Native 0.25° Grid Cells — No Interpolation</option></select><small class="field-help">Every source grid cell is preserved exactly; smoothing and spatial resampling are disabled.</small></div>
+        <div class="field span-3"><label>Administrative Level</label><select name="map_admin_level"><option value="1" {% if form_data.get('map_admin_level') == '1' %}selected{% endif %}>Admin 1 — Regions</option><option value="2" {% if form_data.get('map_admin_level') == '2' %}selected{% endif %}>Admin 2 — Districts</option><option value="3" {% if form_data.get('map_admin_level') == '3' %}selected{% endif %}>Admin 3 — Wards</option></select></div>
+        <div class="field span-3 map-layout-field"><label>Map Output</label><select name="map_output_layout" id="mapOutputLayout"><option value="single" {% if form_data.get('map_output_layout','single') == 'single' %}selected{% endif %}>One Map</option><option value="panel" {% if form_data.get('map_output_layout') == 'panel' %}selected{% endif %}>All Maps in One Multi-Panel Plot</option></select></div>
+        <div class="field span-3 map-panel-basis-field"><label>Multi-Panel Arrangement</label><select name="map_panel_basis" id="mapPanelBasis"><option value="auto" {% if form_data.get('map_panel_basis','auto') == 'auto' %}selected{% endif %}>Automatic</option><option value="year" {% if form_data.get('map_panel_basis') == 'year' %}selected{% endif %}>One Map per Year</option><option value="month" {% if form_data.get('map_panel_basis') == 'month' %}selected{% endif %}>One Map per Month</option><option value="season" {% if form_data.get('map_panel_basis') == 'season' %}selected{% endif %}>One Map per Season</option></select></div>
+        <div class="field span-4"><label>Map Features</label><div class="choice-grid compact-feature-grid"><label class="choice-option"><input type="checkbox" name="show_lakes" value="1" {% if form_data.get('show_lakes','1') == '1' %}checked{% endif %}> <span>Lakes</span></label></div></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if active_service == 'visual' %}
+    <div class="special-product-panel heatmap-configuration hidden" id="heatmapConfiguration">
+      <div class="panel-title-row"><div><strong>Heat-Map Period</strong></div></div>
+      <div class="product-grid compact-product-grid">
+        <div class="field span-4"><label>Months</label><select name="heatmap_month_mode" id="heatmapMonthMode"><option value="all" {% if form_data.get('heatmap_month_mode') == 'all' %}selected{% endif %}>All Months</option><option value="season" {% if form_data.get('heatmap_month_mode') == 'season' %}selected{% endif %}>Selected Season</option><option value="custom" {% if form_data.get('heatmap_month_mode') == 'custom' %}selected{% endif %}>Custom Months</option></select></div>
+        <div class="field span-4 heatmap-season-field"><label>Season</label><select name="heatmap_season">{% for key in seasons.keys() %}<option value="{{ key }}" {% if form_data.get('heatmap_season') == key %}selected{% endif %}>{{ key }}</option>{% endfor %}</select></div>
+        <div class="field span-4 heatmap-custom-months-field"><label>Custom Months</label><input name="heatmap_custom_months" value="{{ form_data.get('heatmap_custom_months','1,2,3') }}"></div>
+        <div class="field span-4"><label>Years</label><select name="heatmap_year_mode" id="heatmapYearMode"><option value="range" {% if form_data.get('heatmap_year_mode') == 'range' %}selected{% endif %}>Selected Date Range</option><option value="custom" {% if form_data.get('heatmap_year_mode') == 'custom' %}selected{% endif %}>Custom Years</option></select></div>
+        <div class="field span-6 heatmap-custom-years-field"><label>Custom Years</label><input name="heatmap_custom_years" value="{{ form_data.get('heatmap_custom_years','') }}"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="request-section common-request-fields">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">3</span><h3>Location and Period</h3></div>
+      </div>
+      <div class="grid extractor-location-grid product-location-grid">
+        <div class="field location-name-field point-location-field"><label>Station / Location Name</label><input id="productLocationField" name="location_name" value="{{ form_data.get('location_name','') }}" required></div>
+        <div class="field point-location-field"><label>Latitude</label><input id="productLatitudeField" name="latitude" value="{{ form_data.get('latitude','') }}" required></div>
+        <div class="field point-location-field"><label>Longitude</label><input id="productLongitudeField" name="longitude" value="{{ form_data.get('longitude','') }}" required></div>
+        <div class="field period-date-field"><label>Start Date</label><input type="date" name="start_date" value="{{ form_data.get('start_date','1991-01-01') }}" required></div>
+        <div class="field period-date-field"><label>End Date</label><input type="date" name="end_date" value="{{ form_data.get('end_date','2020-12-31') }}" required></div>
+        <div class="field hour-range-field"><label>Start Hour</label><select name="start_hour">{% for h in range(0,24) %}<option value="{{ h }}" {% if form_data.get('start_hour','0')|int == h %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>{% endfor %}</select></div>
+        <div class="field hour-range-field"><label>End Hour</label><select name="end_hour">{% for h in range(0,24) %}<option value="{{ h }}" {% if form_data.get('end_hour','23')|int == h %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>{% endfor %}</select></div>
+        <div class="field baseline-field"><label>Baseline Start Year</label><input type="number" name="baseline_start" value="{{ form_data.get('baseline_start','1991') }}"></div>
+        <div class="field baseline-field"><label>Baseline End Year</label><input type="number" name="baseline_end" value="{{ form_data.get('baseline_end','2020') }}"></div>
+      </div>
+      <div class="geocode-actions compact-geocode-actions point-location-field"><button type="button" class="secondary" id="productSearchLocationBtn">Search Coordinates</button><span class="geo-status" id="productGeoStatus"></span></div>
+      <div class="geo-results hidden" id="productGeoResults"></div>
+    </div>
+
+    <div class="actions extractor-actions compact-actions">
+      <button type="submit" id="generateProductBtn">{% if active_service == 'visual' %}Generate Plot{% elif active_service == 'analysis' %}Run Analysis{% else %}Generate Index and Plot{% endif %}</button>
+      <a class="button secondary" href="{{ url_for('plots', service=active_service) }}">Clear</a>
+    </div>
+  </form>
+</section>
+
+{% if combined_excel_url %}
+<section class="card centered-card compact-card professional-result-card">
+  <div class="section-heading compact-heading result-heading">
+    <div><span class="eyebrow">Multi-selection workbook</span><h2>All Generated Outputs in Separate Excel Worksheets</h2><p class="muted">Each selected weather element, resolution and season is placed on its own simple worksheet with an in-sheet verification QR code.</p></div>
+  </div>
+  <div class="product-downloads"><a class="button" href="{{ combined_excel_url }}">Download Combined Multi-Sheet Excel</a></div>
+</section>
+{% endif %}
+
+{% for item in result_items or [] %}
+<section class="card centered-card product-result-card compact-card professional-result-card simple-result-card">
+  <div class="section-heading extractor-heading compact-heading result-heading">
+    <div><span class="eyebrow">Completed</span><h2>{{ item.product_title or item.context.dataset_label }}</h2>{% if item.product_subtitle %}<p class="muted">{{ item.product_subtitle }}</p>{% endif %}{% if item.product_description %}<p class="result-description">{{ item.product_description }}</p>{% endif %}</div>
+    {% if item.rows is defined %}<span class="badge">{{ item.rows }} records</span>{% endif %}
+  </div>
+  {% if item.summary_cards %}<div class="dashboard-stats product-summary-cards">{% for card in item.summary_cards %}<div class="stat-card"><span>{{ card.label }}</span><strong>{{ card.value }}</strong>{% if card.note %}<small>{{ card.note }}</small>{% endif %}</div>{% endfor %}</div>{% endif %}
+  {% if item.plot_url %}<div class="product-preview"><img src="{{ item.plot_url }}?inline=1" alt="{{ item.product_title or 'Generated product' }}" loading="lazy" decoding="async"></div>{% endif %}
+  {% for preview_url in item.preview_urls or [] %}<div class="product-preview"><img src="{{ preview_url }}?inline=1" alt="Analysis chart" loading="lazy" decoding="async"></div>{% endfor %}
+  <div class="product-downloads">{% if item.plot_url %}<a class="button" href="{{ item.plot_url }}?download=1">Download PNG</a>{% endif %}{% if item.excel_url %}<a class="button secondary" href="{{ item.excel_url }}">Download Excel</a>{% endif %}</div>
+</section>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const activeService = {{ active_service|tojson }};
+const hasGeneratedResults = {{ (result_items|length > 0)|tojson }};
+if (hasGeneratedResults && window.history && window.history.replaceState) {
+  window.history.replaceState({}, document.title, `{{ url_for('plots') }}?service=${encodeURIComponent(activeService)}`);
+}
+const variableOptions = {{ variable_options|tojson }};
+const selectedVariables = new Set({{ selected_variables|tojson }});
+const selectedResolutions = new Set({{ selected_resolutions|tojson }});
+const indexOptionsByDataset = {{ index_options_by_dataset|tojson }};
+const indexResolutionRules = {{ index_resolution_rules|tojson }};
+const indexResolutionLabels = {{ index_resolution_labels|tojson }};
+const indexPlotRules = {{ index_plot_rules|tojson }};
+const indexPlotLabels = Object.fromEntries({{ index_plot_types|tojson }});
+const submittedIndexType = {{ form_data.get('index_type','total_rainfall')|tojson }};
+const submittedIndexResolution = {{ form_data.get('index_resolution','annual')|tojson }};
+const submittedIndexPlotType = {{ form_data.get('index_plot_type','auto')|tojson }};
+const dataset = document.getElementById('plotDataset');
+const visualType = document.getElementById('visualType');
+const analysisType = document.getElementById('analysisType');
+const indexType = document.getElementById('indexType');
+const indexSeason = document.getElementById('indexSeason');
+const indexResolution = document.getElementById('indexResolution');
+const indexPlotType = document.getElementById('indexPlotType');
+const generateButton = document.getElementById('generateProductBtn');
+const visualCatalogue = visualType ? Array.from(visualType.querySelectorAll('option')).map(option => ({value: option.value, label: option.textContent, group: option.parentElement.label || ''})) : [];
+const mapProducts = new Set(['spatial_map','spatial_std_map','spatial_cv_map','spatial_climatology','spatial_monthly_climatology','spatial_annual_series','spatial_seasonal_climatology']);
+const comparisonProducts = new Set(['multi_line','scatter']);
+const variabilityProducts = new Set(['mean_std_band','std_error_bars','standard_deviation','coefficient_variation','spatial_std_map','spatial_cv_map']);
+const baselineIndices = new Set(['temperature_anomaly','relative_humidity_index','soil_moisture_index','soil_moisture_anomaly','wind_speed_index','rainfall_anomaly']);
+const rainfallIndexKeys = new Set((indexOptionsByDataset.chirps_rainfall || []).map(item => item.value));
+const plotResolutionRules = {
+  monthly_climatology: ['hourly','daily','monthly'], seasonal_profile: ['hourly','daily','monthly'],
+  mean_std_band: ['hourly','daily','monthly'], std_error_bars: ['hourly','daily','monthly'],
+  standard_deviation: ['hourly','daily','monthly'], coefficient_variation: ['hourly','daily','monthly'], box: ['hourly','daily','monthly'],
+  percentile_band: ['hourly','daily','monthly'], violin: ['hourly','daily','monthly'], diurnal_cycle: ['hourly']
+};
+const visualDescriptions = {
+  time_series:'Values through time for each selected weather element.', bar:'Discrete comparison of values by time period.', area:'Cumulative precipitation through the selected period.',
+  multi_line:'Two or more weather elements compared on one time axis.', monthly_climatology:'Average monthly precipitation totals or monthly means for other weather elements from January to December.', temperature_monthly_profile:'Mean, minimum and maximum temperature compared from January to December.', seasonal_profile:'Climatological comparison of selected seasons.',
+  annual_trend:'Annual values with a fitted long-term trend.', anomaly:'Departures from the selected baseline mean.', standardized_anomaly:'Departures expressed in standard-deviation units.',
+  spatial_map:'Selected weather element mapped across Tanzania.', spatial_climatology:'Long-term spatial mean for the independently selected months and years.', spatial_monthly_climatology:'Twelve January–December climatology maps in one figure.', spatial_annual_series:'One annual map for every selected year.', spatial_seasonal_climatology:'One climatological map for every selected season.', spatial_std_map:'Temporal standard deviation mapped across Tanzania.', spatial_cv_map:'Standard deviation relative to the mean, mapped as a percentage.',
+  heatmap:'Month-by-year pattern for the selected location.', mean_std_band:'Monthly mean with a shaded ±1 standard-deviation band.', std_error_bars:'Monthly mean with standard-deviation error bars.',
+  standard_deviation:'Monthly standard deviation profile.', coefficient_variation:'Monthly variability relative to the mean.', histogram:'Frequency distribution of selected observations.',
+  box:'Monthly median, quartiles and spread.', extreme_value:'Annual maximum values.', scatter:'Relationship between exactly two selected weather elements.', wind_rose:'Wind direction frequency grouped by wind-speed classes.',
+  step_plot:'Values displayed as discrete steps through time.', lollipop:'Individual period values shown with stems and markers.', rolling_mean:'Observed values with a moving average.', cumulative_total:'Cumulative precipitation through the selected period.', percentile_band:'Monthly median with percentile envelopes.', exceedance_curve:'Probability that a value is equalled or exceeded.', ecdf:'Empirical cumulative distribution of observations.', violin:'Monthly distribution shapes.', diurnal_cycle:'Hourly mean with standard deviation, observed range and correctly computed daily diurnal temperature range for temperature data.', rank_plot:'Values ranked from highest to lowest.'
+};
+const analysisDescriptions = {
+  statistical_summary:'Central tendency, spread, percentiles, distribution and data quality.', climatology_profile:'Monthly, seasonal and decadal climate behaviour.',
+  variability_analysis:'Standard deviation, coefficient of variation and standardized anomalies.', trend_variability:'Moving averages, anomalies, linear trend, Mann–Kendall test and Sen’s slope.',
+  extremes_analysis:'Observed extremes, percentiles and annual climate indicators.', comprehensive_analysis:'Integrated climatology, variability, trends and extremes.', spatial_climatology_analysis:'Monthly, annual and seasonal spatial climatology maps with downloadable grid data.',
+  data_quality_analysis:'Completeness, missing periods and valid observations.', distribution_analysis:'Distribution shape, quantiles, skewness and outliers.', percentile_analysis:'Percentile thresholds and exceedance frequencies.', monthly_variability_analysis:'Monthly standard deviation and coefficient of variation.', seasonal_comparison_analysis:'Comparison among seasons.', decadal_change_analysis:'Decadal means and long-term changes.', anomaly_analysis:'Absolute, percentage and standardized anomalies.', trend_significance_analysis:'Trend magnitude and significance tests.', long_term_annual_trend_analysis:'Annual totals for precipitation or annual means for other variables, with a linear trend equation, R², Mann–Kendall test and Sen’s slope.', extreme_frequency_analysis:'Frequency of unusually high and low values.'
+};
+function setVisible(selector, visible) {
+  document.querySelectorAll(selector).forEach(el => {
+    el.classList.toggle('hidden', !visible);
+    el.querySelectorAll('input, select, textarea, button').forEach(ctrl => ctrl.disabled = !visible);
+  });
+}
+function datasetResolutions() {
+  return new Set((dataset.options[dataset.selectedIndex]?.dataset.resolutions || '').split(',').filter(Boolean));
+}
+function rebuildVisualProducts() {
+  if (!visualType) return;
+  const allowed = new Set((dataset.options[dataset.selectedIndex]?.dataset.plotTypes || '').split(',').filter(Boolean));
+  const previous = visualType.value;
+  visualType.innerHTML = '';
+  const groups = new Map();
+  visualCatalogue.filter(item => !allowed.size || allowed.has(item.value)).forEach(item => {
+    const groupName = item.group || 'Plots';
+    if (!groups.has(groupName)) { const group=document.createElement('optgroup'); group.label=groupName; groups.set(groupName, group); visualType.appendChild(group); }
+    const option=document.createElement('option'); option.value=item.value; option.textContent=item.label; groups.get(groupName).appendChild(option);
+  });
+  const values=Array.from(visualType.options).map(option=>option.value);
+  visualType.value=values.includes(previous)?previous:(values[0] || 'time_series');
+}
+function renderVariableChoices() {
+  const holder=document.getElementById('variableChoices'); if(!holder) return;
+  holder.innerHTML=''; const type=visualType?.value || '';
+  const options=(variableOptions[dataset.value] || []).filter(item => !(variabilityProducts.has(type) && item.value==='wind_direction'));
+  options.forEach((item,index)=>{
+    const label=document.createElement('label'); label.className='choice-option';
+    const input=document.createElement('input'); input.type='checkbox'; input.name='plot_variables'; input.value=item.value;
+    input.checked=selectedVariables.has(item.value) || (!selectedVariables.size && index===0);
+    const span=document.createElement('span'); span.textContent=item.label; label.append(input,span); holder.appendChild(label);
+  });
+}
+function currentAllowedResolutions() {
+  const allowed=datasetResolutions();
+  if(activeService==='visual' && visualType && plotResolutionRules[visualType.value]) {
+    const plotAllowed=new Set(plotResolutionRules[visualType.value]); return new Set([...allowed].filter(value=>plotAllowed.has(value)));
+  }
+  return allowed;
+}
+function updateResolutionChoices() {
+  const holder=document.getElementById('resolutionChoices'); if(!holder) return;
+  const allowed=currentAllowedResolutions(); let checked=false;
+  holder.querySelectorAll('[data-resolution]').forEach(label=>{
+    const input=label.querySelector('input'); const enabled=allowed.has(label.dataset.resolution);
+    label.classList.toggle('disabled-choice',!enabled); input.disabled=!enabled; if(!enabled) input.checked=false; if(enabled&&input.checked) checked=true;
+  });
+  if(!checked) {
+    const preferred=['monthly','daily','hourly','annual','seasonal'].find(value=>allowed.has(value));
+    const input=preferred?holder.querySelector(`input[value="${preferred}"]`):null; if(input) input.checked=true;
+  }
+}
+function selectedResolutionValues() {
+  if(activeService==='index') return indexResolution?.value ? [indexResolution.value] : [];
+  return Array.from(document.querySelectorAll('input[name="plot_resolutions"]:checked')).map(input=>input.value);
+}
+function anyHourlySelected(){ return selectedResolutionValues().includes('hourly'); }
+function anySeasonalSelected(){ return selectedResolutionValues().includes('seasonal'); }
+function rebuildIndexTypes(reset=false) {
+  if(!indexType) return;
+  const items=indexOptionsByDataset[dataset.value] || [];
+  const previous=reset?'':(indexType.value || submittedIndexType);
+  indexType.innerHTML='';
+  items.forEach(item=>{ const option=document.createElement('option'); option.value=item.value; option.textContent=item.label; indexType.appendChild(option); });
+  const values=items.map(item=>item.value); indexType.value=values.includes(previous)?previous:(values[0] || '');
+}
+function rebuildIndexResolutions() {
+  if(!indexResolution || !indexType) return;
+  let allowed=[...(indexResolutionRules[indexType.value] || ['annual'])];
+  if(dataset.value==='chirps_rainfall') allowed=allowed.filter(value=>value!=='hourly');
+  else if(dataset.value!=='era5_temperature') { const available=datasetResolutions(); allowed=allowed.filter(value=>available.has(value)); }
+  const previous=indexResolution.value || submittedIndexResolution; indexResolution.innerHTML='';
+  allowed.forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=indexResolutionLabels[value]||value;indexResolution.appendChild(option);});
+  indexResolution.value=allowed.includes(previous)?previous:(allowed.includes('annual')?'annual':allowed[0]);
+}
+function rebuildIndexPlotTypes() {
+  if(!indexPlotType || !indexResolution) return;
+  const allowed=indexPlotRules[indexResolution.value] || ['auto','line']; const previous=indexPlotType.value || submittedIndexPlotType; indexPlotType.innerHTML='';
+  allowed.forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=indexPlotLabels[value]||value;indexPlotType.appendChild(option);});
+  indexPlotType.value=allowed.includes(previous)?previous:'auto';
+}
+function updateMapFields(){ const mm=document.getElementById('mapMonthSelection'),ym=document.getElementById('mapYearSelection'),layout=document.getElementById('mapOutputLayout'); if(!mm||!ym)return; setVisible('.map-month-field',mm.value==='single'); setVisible('.map-season-field',mm.value==='season'); setVisible('.map-custom-months-field',mm.value==='custom'); setVisible('.map-year-field',ym.value==='single'); setVisible('.map-year-range-field',ym.value==='range'); setVisible('.map-custom-years-field',ym.value==='custom'); setVisible('.map-panel-basis-field',layout&&layout.value==='panel'); }
+function updateHeatmapFields(){ const mm=document.getElementById('heatmapMonthMode'),ym=document.getElementById('heatmapYearMode');if(!mm||!ym)return;setVisible('.heatmap-season-field',mm.value==='season');setVisible('.heatmap-custom-months-field',mm.value==='custom');setVisible('.heatmap-custom-years-field',ym.value==='custom'); }
+function updateIndexFields(){
+  if(activeService!=='index' || !indexType)return;
+  rebuildIndexResolutions(); rebuildIndexPlotTypes();
+  const idx=indexType.value, scale=indexResolution.value, rainfall=rainfallIndexKeys.has(idx);
+  setVisible('.index-month-filter',['monthly','annual','seasonal'].includes(scale));
+  setVisible('.index-custom-months',['monthly','annual','seasonal'].includes(scale) && indexSeason.value==='CUSTOM');
+  setVisible('.index-custom-years',['monthly','annual','seasonal'].includes(scale));
+  setVisible('.index-rainy-threshold',rainfall && ['number_wet_days','number_dry_days','consecutive_dry_days','consecutive_wet_days','wet_spell_length','dry_spell_length','sdii'].includes(idx));
+  setVisible('.index-heavy-threshold',rainfall && ['heavy_rainfall_days','very_heavy_rainfall_days'].includes(idx));
+  setVisible('.index-very-heavy-threshold',rainfall && idx==='very_heavy_rainfall_days');
+  setVisible('.index-heat-threshold',['hot_days','heat_index'].includes(idx));
+  setVisible('.index-warm-threshold',idx==='hot_nights');
+  setVisible('.index-cold-threshold',['cold_days','cold_nights'].includes(idx));
+}
+function updateGuidance(){ const holder=document.getElementById('selectionGuidance'); if(!holder)return; if(activeService==='visual')holder.textContent=visualDescriptions[visualType.value]||'Generate the selected plot.';else if(activeService==='analysis')holder.textContent=analysisDescriptions[analysisType.value]||'Run the selected analysis.';else { const label=indexType?.options[indexType.selectedIndex]?.textContent||'Selected climate index';holder.textContent=`${label} will be calculated from ${dataset.options[dataset.selectedIndex].textContent} and plotted at the selected time scale.`; } }
+function updateWorkspace(){
+  const type=visualType?.value || ''; const isMap=(activeService==='visual'&&mapProducts.has(type))||(activeService==='analysis'&&analysisType?.value==='spatial_climatology_analysis'); const isHeat=activeService==='visual'&&type==='heatmap'; const isWindRose=activeService==='visual'&&type==='wind_rose'; const isComparison=activeService==='visual'&&comparisonProducts.has(type);
+  setVisible('#mapConfiguration',isMap); setVisible('#heatmapConfiguration',isHeat);
+  setVisible('.season-selection-field',activeService!=='index'&&!isMap&&!isHeat&&anySeasonalSelected());
+  setVisible('.comparison-help',isComparison); setVisible('.wind-rose-help',isWindRose); setVisible('#variableChoices',!isWindRose);
+  setVisible('.point-location-field',!isMap); setVisible('.period-date-field',!isMap); setVisible('.hour-range-field',!isMap&&anyHourlySelected());
+  if(activeService==='index')updateIndexFields();
+  const showBaseline=(activeService==='visual'&&['anomaly','standardized_anomaly'].includes(type))||(activeService==='analysis'&&['variability_analysis','trend_variability','comprehensive_analysis'].includes(analysisType.value))||(activeService==='index'&&baselineIndices.has(indexType.value));
+  setVisible('.baseline-field',showBaseline);
+  updateMapFields();updateHeatmapFields();updateGuidance();
+}
+
+dataset.addEventListener('change',()=>{
+  selectedVariables.clear(); selectedResolutions.clear();
+  if(activeService==='index'){rebuildIndexTypes(true);updateIndexFields();}
+  else {if(activeService==='visual')rebuildVisualProducts();renderVariableChoices();updateResolutionChoices();}
+  updateWorkspace();
+});
+if(visualType)visualType.addEventListener('change',()=>{selectedVariables.clear();renderVariableChoices();updateResolutionChoices();updateWorkspace();});
+if(analysisType)analysisType.addEventListener('change',updateWorkspace);
+if(indexType)indexType.addEventListener('change',()=>{updateIndexFields();updateWorkspace();});
+if(indexSeason)indexSeason.addEventListener('change',updateWorkspace);
+if(indexResolution)indexResolution.addEventListener('change',()=>{rebuildIndexPlotTypes();updateWorkspace();});
+if(indexPlotType)indexPlotType.addEventListener('change',updateGuidance);
+document.querySelectorAll('input[name="plot_resolutions"]').forEach(input=>input.addEventListener('change',updateWorkspace));
+const mapMonthSelection=document.getElementById('mapMonthSelection');if(mapMonthSelection)mapMonthSelection.addEventListener('change',updateMapFields); const mapYearSelection=document.getElementById('mapYearSelection');if(mapYearSelection)mapYearSelection.addEventListener('change',updateMapFields); const mapOutputLayout=document.getElementById('mapOutputLayout');if(mapOutputLayout)mapOutputLayout.addEventListener('change',updateMapFields);
+const heatMonth=document.getElementById('heatmapMonthMode');if(heatMonth)heatMonth.addEventListener('change',updateHeatmapFields);
+const heatYear=document.getElementById('heatmapYearMode');if(heatYear)heatYear.addEventListener('change',updateHeatmapFields);
+
+if(activeService==='index'){rebuildIndexTypes(false);updateIndexFields();}else{if(activeService==='visual')rebuildVisualProducts();renderVariableChoices();updateResolutionChoices();}
+updateWorkspace();
+
+document.getElementById('unifiedProductForm').addEventListener('submit',event=>{
+  if(activeService==='visual'&&comparisonProducts.has(visualType.value)){
+    const count=document.querySelectorAll('input[name="plot_variables"]:checked').length;
+    if((visualType.value==='scatter'&&count!==2)||(visualType.value==='multi_line'&&count<2)){event.preventDefault();alert(visualType.value==='scatter'?'Select exactly two weather elements.':'Select at least two weather elements.');return;}
+  }
+  generateButton.disabled=true;generateButton.textContent='Processing…';
+});
+const searchButton=document.getElementById('productSearchLocationBtn');
+if(searchButton)searchButton.addEventListener('click',async()=>{
+  const q=document.getElementById('productLocationField').value.trim(),results=document.getElementById('productGeoResults');results.innerHTML='';results.classList.add('hidden');if(!q)return;
+  try{const resp=await fetch(`{{ url_for('api_geocode') }}?q=${encodeURIComponent(q)}`),data=await resp.json();if(!data.ok)return;data.results.forEach(r=>{const btn=document.createElement('button');btn.type='button';btn.className='geo-choice';btn.textContent=`${r.name} (${r.latitude}, ${r.longitude})`;btn.onclick=()=>{document.getElementById('productLocationField').value=r.name;document.getElementById('productLatitudeField').value=r.latitude;document.getElementById('productLongitudeField').value=r.longitude;results.classList.add('hidden');};results.appendChild(btn);});results.classList.remove('hidden');}catch(e){}
+});
+</script>
+{% endblock %}

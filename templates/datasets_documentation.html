@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card">
+  <div class="section-heading"><div><h1>Datasets Documentation</h1><p>Detailed notes for every dataset used by the Climate Data Extractor. All datasets are prepared on a 0.25° × 0.25° spatial grid.</p></div></div>
+  <div class="documentation-grid">
+    {% for doc in docs %}
+    <article class="doc-dataset-card">
+      <h3>{{ doc.label }}</h3>
+      <p>{{ doc.description }}</p>
+      <div class="doc-meta-grid">
+        <div class="doc-meta"><span>Official Name</span><strong>{{ doc.official_name }}</strong></div>
+        <div class="doc-meta"><span>Provider</span><strong>{{ doc.provider }}</strong></div>
+        <div class="doc-meta"><span>Category</span><strong>{{ doc.category }}</strong></div>
+        <div class="doc-meta"><span>Temporal Coverage</span><strong>{{ doc.temporal_coverage }}</strong></div>
+        <div class="doc-meta"><span>Spatial Coverage</span><strong>{{ doc.spatial_coverage }}</strong></div>
+        <div class="doc-meta"><span>Spatial Resolution</span><strong>{{ doc.spatial_resolution }}</strong></div>
+        <div class="doc-meta"><span>Coordinate Names</span><strong>{{ doc.lat_coord }}, {{ doc.lon_coord }}, {{ doc.time_coord }}</strong></div>
+        <div class="doc-meta"><span>Supported Outputs</span><strong>{{ doc.supported_frequencies|join(', ') }}</strong></div>
+      </div>
+      <h4>Variables</h4>
+      <div class="table-wrap"><table class="doc-table"><thead><tr><th>Variable</th><th>Label</th><th>Unit</th><th>Daily Aggregation</th><th>Period Aggregation</th></tr></thead><tbody>
+      {% for vkey, var in doc.variables.items() %}<tr><td><code>{{ vkey }}</code></td><td>{{ var.label }}</td><td>{{ var.unit }}</td><td>{{ var.daily_aggregation }}</td><td>{{ var.period_aggregation }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      <h4>Processing Notes</h4>
+      <ul class="doc-list">{% for note in doc.notes %}<li>{{ note }}</li>{% endfor %}</ul>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

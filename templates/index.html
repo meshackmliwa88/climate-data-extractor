@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}{{ app_short_name }} - Data Extraction{% endblock %}
+{% block content %}
+{% if error %}
+<div class="alert error"><strong>Error:</strong> {{ error }}</div>
+{% endif %}
+
+<section id="extract-card" class="card extractor-card centered-card">
+  <div class="section-heading">
+    <div>
+      <h2>Generate Excel Output</h2>
+      <p>Extract point-based CHIRPS and ERA5 satellite/reanalysis data using a location name or editable coordinates.</p>
+    </div>
+    <span class="badge">Satellite & Reanalysis</span>
+  </div>
+
+  <form action="{{ url_for('extract') }}" method="post" id="extractForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="grid two">
+      <div class="field">
+        <label for="source">Data Source</label>
+        <select name="source" id="source" required>
+          <option value="">Select data source</option>
+          {% for key, src in sources.items() %}
+          <option value="{{ key }}" {% if not src.available %}disabled{% endif %}>{{ src.label }}{% if not src.available %} - files missing{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Variables</label>
+        <div id="variableBox" class="option-box muted">Select a data source first.</div>
+      </div>
+    </div>
+
+    <div class="grid three">
+      <div class="field">
+        <label for="start_date">Start Date</label>
+        <input type="date" name="start_date" id="start_date" required>
+      </div>
+      <div class="field">
+        <label for="end_date">End Date</label>
+        <input type="date" name="end_date" id="end_date" required>
+      </div>
+      <div class="field">
+        <label>Temporal Resolution</label>
+        <div id="frequencyBox" class="option-box muted">Select a data source first.</div>
+      </div>
+    </div>
+
+    <div class="location-panel">
+      <div class="location-heading">
+        <h3>Location and Coordinates</h3>
+        <p>Type a place name, click <strong>Find Coordinates</strong>, then review or edit latitude and longitude before generating Excel.</p>
+      </div>
+      <div class="grid three location-grid">
+        <div class="field location-name-field">
+          <label for="location_name">Location Name</label>
+          <input type="text" name="location_name" id="location_name" placeholder="Example: Veyula Dodoma Tanzania" required>
+          <small>Use place + district/region + Tanzania for better results.</small>
+        </div>
+        <div class="field coord-field">
+          <label for="latitude">Latitude</label>
+          <input type="number" step="any" name="latitude" id="latitude" placeholder="-6.1731" required>
+        </div>
+        <div class="field coord-field">
+          <label for="longitude">Longitude</label>
+          <input type="number" step="any" name="longitude" id="longitude" placeholder="35.7417" required>
+        </div>
+      </div>
+      <div class="geocode-actions">
+        <button type="button" id="findCoords" class="button secondary">Find Coordinates</button>
+        <span id="geoStatus" class="geo-status">Coordinates are populated automatically when a matching location is found.</span>
+      </div>
+      <div id="geoResults" class="geo-results hidden"></div>
+      <div class="hint-box">
+        No coordinates? Type a more exact place name such as <strong>Veyula Dodoma Tanzania</strong>, <strong>Iringa Tanzania</strong>, <strong>Arusha Airport Tanzania</strong>, or enter latitude/longitude manually.
+      </div>
+    </div>
+
+    <div id="seasonPanel" class="season-panel hidden">
+      <h3>Season Options</h3>
+      <p class="muted">Select standard seasonal codes.</p>
+      <div class="season-grid">
+        <label class="check-item"><input type="checkbox" name="seasons" value="DJF"> DJF</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="MAM"> MAM</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="JJA"> JJA</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="SON"> SON</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="OND"> OND</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="NDJ"> NDJ</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="DJFMA"> DJFMA</label>
+        <label class="check-item"><input type="checkbox" name="seasons" value="NDJFMA"> NDJFMA</label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit">Generate Excel</button>
+    </div>
+</form>
+</section>
+
+<section id="available-card" class="card available-card centered-card">
+  <button type="button" id="toggleFiles" class="button secondary available-toggle" aria-expanded="false">Available Data Files</button>
+  <div id="availableFilesPanel" class="available-files-panel hidden">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Resolution Files</th><th>Variables</th><th>Outputs</th></tr>
+        </thead>
+        <tbody>
+          {% for key, src in sources.items() %}
+          <tr>
+            <td><strong>{{ src.label }}</strong><br><small>{{ key }}</small></td>
+            <td>
+              {% for freq, item in src.available_by_frequency.items() %}
+              <div class="file-row">
+                <span class="pill light">{{ freq }}</span>
+                <code>{{ item.pattern }}</code>
+                {% if item.available %}<span class="ok">Available</span>{% else %}<span class="bad">Missing</span>{% endif %}
+              </div>
+              {% endfor %}
+            </td>
+            <td>
+              {% for v, meta in src.variables.items() %}<span class="pill">{{ meta.label }}</span>{% endfor %}
+            </td>
+            <td>{% for f in src.supported_frequencies %}<span class="pill light">{{ f }}</span>{% endfor %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const sources = {{ sources|tojson }};
+  const sourceSelect = document.getElementById('source');
+  const variableBox = document.getElementById('variableBox');
+  const frequencyBox = document.getElementById('frequencyBox');
+  const seasonPanel = document.getElementById('seasonPanel');
+  const toggleFiles = document.getElementById('toggleFiles');
+  const availableFilesPanel = document.getElementById('availableFilesPanel');
+  const findCoords = document.getElementById('findCoords');
+  const geoStatus = document.getElementById('geoStatus');
+  const geoResults = document.getElementById('geoResults');
+  const locationName = document.getElementById('location_name');
+  const latInput = document.getElementById('latitude');
+  const lonInput = document.getElementById('longitude');
+
+  function prettyFrequency(freq) {
+    return ({hourly:'Hourly', daily:'Daily', monthly:'Monthly', annual:'Annual', seasonal:'Seasonal'}[freq] || freq);
+  }
+  function updateSeasonPanel() {
+    const selected = Array.from(document.querySelectorAll('input[name="frequencies"]:checked')).map(x => x.value);
+    seasonPanel.classList.toggle('hidden', !selected.includes('seasonal'));
+  }
+  toggleFiles.addEventListener('click', function () {
+    const isHidden = availableFilesPanel.classList.toggle('hidden');
+    toggleFiles.setAttribute('aria-expanded', String(!isHidden));
+    toggleFiles.textContent = isHidden ? 'Available Data Files' : 'Hide Available Data Files';
+  });
+  sourceSelect.addEventListener('change', function () {
+    const key = this.value;
+    variableBox.innerHTML = '';
+    frequencyBox.innerHTML = '';
+    if (!key || !sources[key]) {
+      variableBox.textContent = 'Select a data source first.';
+      frequencyBox.textContent = 'Select a data source first.';
+      return;
+    }
+    const src = sources[key];
+    Object.entries(src.variables || {}).forEach(([code, meta]) => {
+      const label = document.createElement('label');
+      label.className = 'check-item';
+      label.innerHTML = `<input type="checkbox" name="variables" value="${code}"> ${meta.label || code}`;
+      variableBox.appendChild(label);
+    });
+    (src.supported_frequencies || []).forEach(freq => {
+      const item = (src.available_by_frequency || {})[freq] || {};
+      const label = document.createElement('label');
+      label.className = 'check-item';
+      label.innerHTML = `<input type="checkbox" name="frequencies" value="${freq}" ${item.available ? '' : 'disabled'}> ${prettyFrequency(freq)} ${item.available ? '' : '<small>missing</small>'}`;
+      frequencyBox.appendChild(label);
+    });
+    document.querySelectorAll('input[name="frequencies"]').forEach(x => x.addEventListener('change', updateSeasonPanel));
+    updateSeasonPanel();
+  });
+  function applyGeoResult(r) {
+    locationName.value = r.name;
+    latInput.value = Number(r.latitude).toFixed(6);
+    lonInput.value = Number(r.longitude).toFixed(6);
+    geoStatus.textContent = 'Coordinates found. You may edit them before generating Excel.';
+    geoStatus.className = 'geo-status ok-text';
+    geoResults.classList.add('hidden');
+  }
+  findCoords.addEventListener('click', async function () {
+    const q = locationName.value.trim();
+    geoResults.innerHTML = '';
+    geoResults.classList.add('hidden');
+    if (!q) {
+      geoStatus.textContent = 'Type a location name first, for example: Veyula Dodoma Tanzania.';
+      geoStatus.className = 'geo-status warn-text';
+      return;
+    }
+    geoStatus.textContent = 'Searching coordinates...';
+    geoStatus.className = 'geo-status';
+    try {
+      const res = await fetch(`{{ url_for('api_geocode') }}?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No coordinates found.');
+      if (data.results.length === 1) { applyGeoResult(data.results[0]); return; }
+      data.results.forEach(r => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'geo-choice';
+        btn.textContent = `${r.name}  (${Number(r.latitude).toFixed(5)}, ${Number(r.longitude).toFixed(5)})`;
+        btn.addEventListener('click', () => applyGeoResult(r));
+        geoResults.appendChild(btn);
+      });
+      geoResults.classList.remove('hidden');
+      geoStatus.textContent = 'Several places found. Choose the correct one below.';
+    } catch (err) {
+      geoStatus.textContent = err.message + ' Try: Veyula Dodoma Tanzania / Iringa Tanzania / Arusha Airport Tanzania, or type coordinates manually.';
+      geoStatus.className = 'geo-status warn-text';
+    }
+  });
+</script>
+{% endblock %}

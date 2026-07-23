@@ -1,0 +1,488 @@
+{
+  "CHIRPS": {
+    "label": "CHIRPS Precipitation",
+    "description": "CHIRPS satellite rainfall over Tanzania. Prepared CDE files provide daily, monthly, annual and seasonal rainfall totals. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "daily": "daily/CDE_CHIRPS_Tanzania_Rainfall_1981_2025_Daily_Total.zarr",
+      "monthly": "monthly/CDE_CHIRPS_Tanzania_Rainfall_1981_2025_Monthly_Total.zarr",
+      "annual": "annual/CDE_CHIRPS_Tanzania_Rainfall_1981_2025_Annual_Total.zarr",
+      "seasonal": "seasonal/CDE_CHIRPS_Tanzania_Rainfall_1981_2025_Seasonal_{season}_Total.zarr"
+    },
+    "variables": {
+      "precip": {
+        "label": "CHIRPS Precipitation",
+        "unit": "mm",
+        "conversion": "none",
+        "daily_aggregation": "sum",
+        "period_aggregation": "sum",
+        "candidate_names": [
+          "precip",
+          "rainfall",
+          "precipitation"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_TEMP": {
+    "label": "ERA5 2m Temperature",
+    "description": "ERA5 2m air temperature. Hourly data are read from ERA5_Tanzania_Temperature_2M_Hourly_1940_2026.zarr. Daily, monthly, annual and seasonal products are read from the prepared CDE ERA5 temperature Mean/Minimum/Maximum stores.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Temperature_2M_Hourly_1940_2026.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*{season}*.zarr"
+    },
+    "variables": {
+      "ta": {
+        "label": "Mean 2m Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "ta",
+          "t2m",
+          "tmean",
+          "mean_temperature",
+          "temperature_2m",
+          "2m_temperature",
+          "temperature"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_TEMP_STATS": {
+    "label": "ERA5 Temperature Mean, Minimum and Maximum",
+    "description": "Prepared CDE ERA5 temperature products from CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025.zarr for daily, monthly, annual and seasonal analysis.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "daily": "daily/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Temperature_Mean_Min_Max_1940_2025*{season}*.zarr"
+    },
+    "variables": {
+      "ta": {
+        "label": "Mean Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "ta",
+          "tmean",
+          "mean_temperature",
+          "mean_2m_temperature",
+          "temperature"
+        ]
+      },
+      "tmin": {
+        "label": "Minimum Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "min",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "tmin",
+          "tn",
+          "minimum_temperature",
+          "minimum_2m_temperature",
+          "tasmin"
+        ]
+      },
+      "tmax": {
+        "label": "Maximum Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "max",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "tmax",
+          "tx",
+          "maximum_temperature",
+          "maximum_2m_temperature",
+          "tasmax"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_TP": {
+    "label": "ERA5 Precipitation",
+    "description": "ERA5 total precipitation. Hourly raw file plus prepared daily, monthly, annual and seasonal totals. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Total_Precipitation_TP_Hourly_1940_2026.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Total_Precipitation_1940_2026_Daily_Total.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Total_Precipitation_1940_2026_Monthly_Total.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Total_Precipitation_1940_2026_Annual_Total.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Total_Precipitation_1940_2026_Seasonal_{season}_Total.zarr"
+    },
+    "variables": {
+      "tp": {
+        "label": "ERA5 Precipitation",
+        "unit": "mm",
+        "conversion": "auto_precip_to_mm",
+        "daily_aggregation": "sum",
+        "period_aggregation": "sum",
+        "candidate_names": [
+          "tp",
+          "total_precipitation",
+          "precip",
+          "precipitation"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_WIND": {
+    "label": "ERA5 10m Wind Speed and Direction",
+    "description": "ERA5 wind speed and direction at 10m. Wind speed is output in knots and wind direction in degrees. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Wind_Speed_Direction_10m_Hourly_1940_2025.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Wind_Speed_and_Direction_10m_1940_2025_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Wind_Speed_and_Direction_10m_1940_2025_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Wind_Speed_and_Direction_10m_1940_2025_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Wind_Speed_and_Direction_10m_1940_2025_Seasonal_{season}_Mean.zarr"
+    },
+    "wind_u_variable": "u10",
+    "wind_v_variable": "v10",
+    "variables": {
+      "wind_speed": {
+        "label": "Wind Speed",
+        "unit": "knots",
+        "conversion": "auto_wind_speed_to_knots",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "wind_speed",
+          "windspd",
+          "wspd",
+          "ws",
+          "si10",
+          "wind_speed_10m",
+          "windspeed"
+        ]
+      },
+      "wind_direction": {
+        "label": "Wind Direction",
+        "unit": "degrees",
+        "conversion": "none",
+        "daily_aggregation": "vector_mean_direction",
+        "period_aggregation": "vector_mean_direction",
+        "candidate_names": [
+          "wind_direction",
+          "winddir",
+          "wdir",
+          "wd",
+          "wind_direction_10m",
+          "winddirection"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_RH": {
+    "label": "ERA5 Relative Humidity",
+    "description": "ERA5 relative humidity with hourly raw and prepared daily/monthly/annual/seasonal mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Relative_Humidity_Hourly_1940_2025.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Relative_Humidity_1940_2025_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Relative_Humidity_1940_2025_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Relative_Humidity_1940_2025_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Relative_Humidity_1940_2025_Seasonal_{season}_Mean.zarr"
+    },
+    "extra_select": {
+      "pressure_level": 1000
+    },
+    "variables": {
+      "r": {
+        "label": "Relative Humidity",
+        "unit": "%",
+        "conversion": "none",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "r",
+          "rh",
+          "relative_humidity",
+          "humidity"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_PRESSURE_CLOUD": {
+    "label": "ERA5 Surface Pressure and Total Cloud Cover",
+    "description": "ERA5 pressure and total cloud cover with hourly raw and prepared daily/monthly/annual/seasonal mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Pressure_and_Total_Cloud_Cover_Hourly_1940_2025.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Surface_Pressure_and_Total_Cloud_Cover_1940_2025_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Surface_Pressure_and_Total_Cloud_Cover_1940_2025_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Surface_Pressure_and_Total_Cloud_Cover_1940_2025_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Surface_Pressure_and_Total_Cloud_Cover_1940_2025_Seasonal_{season}_Mean.zarr"
+    },
+    "variables": {
+      "msl": {
+        "label": "Mean Sea Level Pressure",
+        "unit": "hPa",
+        "conversion": "auto_pressure_to_hpa",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "msl",
+          "mslp",
+          "mean_sea_level_pressure"
+        ]
+      },
+      "sp": {
+        "label": "Surface Pressure",
+        "unit": "hPa",
+        "conversion": "auto_pressure_to_hpa",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "sp",
+          "surface_pressure"
+        ]
+      },
+      "tcc": {
+        "label": "Total Cloud Cover",
+        "unit": "octas",
+        "conversion": "auto_cloud_to_oktas",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "tcc",
+          "total_cloud_cover",
+          "cloud_cover"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_D2M": {
+    "label": "ERA5 Dew Point Temperature 2m",
+    "description": "ERA5 2m dew point temperature with hourly raw and prepared mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Dew_Point_Temperature_D2M_Hourly_1940_2026.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Dew_Point_Temperature_2m_1940_2026_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Dew_Point_Temperature_2m_1940_2026_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Dew_Point_Temperature_2m_1940_2026_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Dew_Point_Temperature_2m_1940_2026_Seasonal_{season}_Mean.zarr"
+    },
+    "variables": {
+      "d2m": {
+        "label": "Dew Point Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "d2m",
+          "dew_point_temperature",
+          "dewpoint",
+          "td"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_SKT": {
+    "label": "ERA5 Skin Temperature",
+    "description": "ERA5 skin temperature with hourly raw and prepared mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Skin_Temperature_SKT_Hourly_1940_2026.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Skin_Temperature_1940_2026_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Skin_Temperature_1940_2026_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Skin_Temperature_1940_2026_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Skin_Temperature_1940_2026_Seasonal_{season}_Mean.zarr"
+    },
+    "variables": {
+      "skt": {
+        "label": "Skin Temperature",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "skt",
+          "skin_temperature"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_STL1": {
+    "label": "ERA5-Land Soil Temperature Level 1",
+    "description": "ERA5 soil temperature level 1 with hourly raw and prepared mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Soil_Temperature_Level_1_STL1_Hourly_1940_2026.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Soil_Temperature_Level_1_1940_2026_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Soil_Temperature_Level_1_1940_2026_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Soil_Temperature_Level1_annual_mean_1940_2025.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Soil_Temperature_Level_1_1940_2026_Seasonal_{season}_Mean.zarr"
+    },
+    "variables": {
+      "stl1": {
+        "label": "Soil Temperature Level 1",
+        "unit": "°C",
+        "conversion": "auto_kelvin_to_celsius",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "stl1",
+          "soil_temperature_level_1",
+          "soil_temperature"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  },
+  "ERA5_SWVL": {
+    "label": "ERA5-Land Volumetric Soil Moisture",
+    "description": "ERA5 volumetric soil moisture with hourly raw and prepared mean files. Stores are mapped from storage/zarr/<resolution> subfolders.",
+    "time_coord": "valid_time",
+    "lat_coord": "latitude",
+    "lon_coord": "longitude",
+    "supported_frequencies": [
+      "hourly",
+      "daily",
+      "monthly",
+      "annual",
+      "seasonal"
+    ],
+    "file_patterns": {
+      "hourly": "hourly/ERA5_Tanzania_Volumetric_Soil_Water_SWVL_Hourly_1996_2025.zarr",
+      "daily": "daily/CDE_ERA5_Tanzania_Volumetric_Soil_Water_1996_2025_Daily_Mean.zarr",
+      "monthly": "monthly/CDE_ERA5_Tanzania_Volumetric_Soil_Water_1996_2025_Monthly_Mean.zarr",
+      "annual": "annual/CDE_ERA5_Tanzania_Volumetric_Soil_Water_1996_2025_Annual_Mean.zarr",
+      "seasonal": "seasonal/CDE_ERA5_Tanzania_Volumetric_Soil_Water_1996_2025_Seasonal_{season}_Mean.zarr"
+    },
+    "variables": {
+      "swvl1": {
+        "label": "Volumetric Soil Moisture",
+        "unit": "m³/m³",
+        "conversion": "none",
+        "daily_aggregation": "mean",
+        "period_aggregation": "mean",
+        "candidate_names": [
+          "swvl1",
+          "swvl",
+          "volumetric_soil_water"
+        ]
+      }
+    },
+    "storage_format": "Zarr",
+    "chunked_access": true
+  }
+}

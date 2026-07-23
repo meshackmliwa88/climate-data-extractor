@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card extractor-card compact-extractor-card guided-extractor">
+  <div class="section-heading extractor-heading">
+    <div>
+      <span class="eyebrow">CDE Data Request</span>
+      <h1>Data Extractor</h1>
+</div>
+</div>
+
+  {% set active_service = 'extraction' %}
+  {% include "partials/workspace_tabs.html" %}
+
+  {% if field_errors.generationField %}<div class="alert error">{{ field_errors.generationField }}</div>{% endif %}
+
+  <form method="post" action="{{ url_for('extract') }}" id="extractForm" class="compact-extractor-form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="requests_json" id="requestsJsonField">
+
+    <div class="extractor-panel selection-panel guided-step-panel">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">1</span><h3>Dataset and Data Type</h3></div>
+</div>
+      <div class="grid extractor-selection-grid">
+        <div class="field {% if field_errors.sourceField %}has-error{% endif %}">
+          <label for="sourceField">Dataset</label>
+          <select id="sourceField" name="source" required>
+            <option value="">Select dataset</option>
+            {% for key, src in sources.items() %}<option value="{{ key }}" {% if form_data.get('source') == key %}selected{% endif %}>{{ src.label }}</option>{% endfor %}
+          </select>
+          {% if field_errors.sourceField %}<div class="field-error">{{ field_errors.sourceField }}</div>{% endif %}
+        </div>
+        <div class="field {% if field_errors.frequencyField %}has-error{% endif %}">
+          <label>Temporal Resolution</label>
+          <div class="option-box compact-option-box" id="frequencyBox"></div>
+          {% if field_errors.frequencyField %}<div class="field-error">{{ field_errors.frequencyField }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="field variable-field {% if field_errors.variablesField %}has-error{% endif %}">
+        <label>Weather Elements</label>
+        <div class="option-box compact-option-box" id="variablesBox"></div>
+        {% if field_errors.variablesField %}<div class="field-error">{{ field_errors.variablesField }}</div>{% endif %}
+      </div>
+      <div id="seasonPanel" class="season-panel compact-season-panel hidden {% if field_errors.seasonField %}has-error{% endif %}">
+        <div class="compact-panel-title"><h3>Seasonal Options</h3></div>
+        <div class="season-grid compact-season-grid">
+          {% set sel_seasons = selected_seasons or [] %}
+          {% for code in ['DJF','MAM','JJA','SON','OND','NDJ','DJFMA','NDJFMA'] %}
+          <label class="check-item"><input type="checkbox" name="seasons" value="{{ code }}" {% if code in sel_seasons %}checked{% endif %}> {{ code }}</label>
+          {% endfor %}
+        </div>
+        <div class="custom-season custom-season-inline">
+          <label for="customMonthsField">Custom Months</label>
+          <input id="customMonthsField" name="custom_months" value="{{ form_data.get('custom_months','') }}">
+        </div>
+        {% if field_errors.seasonField %}<div class="field-error">{{ field_errors.seasonField }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="extractor-panel request-panel guided-step-panel">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">2</span><h3>Location and Period</h3></div>
+        <p class="muted">Search a location to populate coordinates, or enter coordinates manually.</p>
+      </div>
+      <div class="grid extractor-location-grid">
+        <div class="field location-name-field {% if field_errors.locationNameField %}has-error{% endif %}">
+          <label>Station / Location Name</label>
+          <input id="locationField" name="location_name" value="{{ form_data.get('location_name','') }}" required>
+          {% if field_errors.locationNameField %}<div class="field-error">{{ field_errors.locationNameField }}</div>{% endif %}
+        </div>
+        <div class="field {% if field_errors.latitudeField %}has-error{% endif %}">
+          <label>Latitude</label>
+          <input id="latitudeField" name="latitude" value="{{ form_data.get('latitude','') }}" required>
+          {% if field_errors.latitudeField %}<div class="field-error">{{ field_errors.latitudeField }}</div>{% endif %}
+        </div>
+        <div class="field {% if field_errors.longitudeField %}has-error{% endif %}">
+          <label>Longitude</label>
+          <input id="longitudeField" name="longitude" value="{{ form_data.get('longitude','') }}" required>
+          {% if field_errors.longitudeField %}<div class="field-error">{{ field_errors.longitudeField }}</div>{% endif %}
+        </div>
+        <div class="field {% if field_errors.startDateField %}has-error{% endif %}">
+          <label>Start Date</label>
+          <input type="date" name="start_date" value="{{ form_data.get('start_date','') }}" required>
+          {% if field_errors.startDateField %}<div class="field-error">{{ field_errors.startDateField }}</div>{% endif %}
+        </div>
+        <div class="field {% if field_errors.endDateField %}has-error{% endif %}">
+          <label>End Date</label>
+          <input type="date" name="end_date" value="{{ form_data.get('end_date','') }}" required>
+          {% if field_errors.endDateField %}<div class="field-error">{{ field_errors.endDateField }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="geocode-actions compact-geocode-actions">
+        <button type="button" class="secondary" id="searchLocationBtn">Search Coordinates</button>
+        <span class="geo-status" id="geoStatus"></span>
+      </div>
+      <div class="geo-results hidden" id="geoResults"></div>
+    </div>
+
+    <div class="extractor-panel customer-generation-panel guided-step-panel">
+      <div class="compact-panel-title numbered-panel-title">
+        <div><span class="step-number">3</span><h3>Generate</h3></div>
+        <p class="muted">Save another request when necessary, then generate the data package.</p>
+      </div>
+
+      <div class="saved-requests-panel" id="savedRequestsPanel" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #dbe7f3; border-radius:14px; background:#f8fbff;">
+        <strong>Saved requests for one Data Delivery Report</strong>
+        <div id="savedRequestsList" class="muted" style="margin-top:.5rem;"></div>
+      </div>
+
+      <div class="actions extractor-actions">
+        <button type="button" class="secondary" id="saveRequestBtn">Save Request and Add Another</button>
+        <button type="button" class="secondary" id="clearSavedRequestsBtn">Clear Saved Requests</button>
+        <button type="submit" id="generateDeliveryBtn">Generate Excel and Delivery Report</button>
+        <a class="button secondary" href="{{ url_for('extractor', reset=1) }}">Reset Form</a>
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const SOURCES = {{ sources|tojson }};
+const selectedVariables = new Set({{ (selected_variables or [])|tojson }});
+const selectedFrequencies = new Set({{ (selected_frequencies or [])|tojson }});
+const sourceField = document.getElementById('sourceField');
+const variablesBox = document.getElementById('variablesBox');
+const frequencyBox = document.getElementById('frequencyBox');
+const seasonPanel = document.getElementById('seasonPanel');
+function checkItem(name, value, label, checked, disabled=false) {
+  const item = document.createElement('label'); item.className = 'check-item';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.name = name; input.value = value; input.checked = checked; input.disabled = disabled;
+  input.addEventListener('change', toggleSeasonPanel);
+  item.appendChild(input); item.appendChild(document.createTextNode(' ' + label));
+  return item;
+}
+function renderSourceOptions() {
+  const key = sourceField.value; const src = SOURCES[key] || {};
+  variablesBox.innerHTML = ''; frequencyBox.innerHTML = '';
+  Object.entries(src.variables || {}).forEach(([vkey, v]) => variablesBox.appendChild(checkItem('variables', vkey, `${v.label}${v.unit ? ' ('+v.unit+')' : ''}`, selectedVariables.has(vkey))));
+  (src.supported_frequencies || []).forEach(freq => frequencyBox.appendChild(checkItem('frequencies', freq, freq.charAt(0).toUpperCase()+freq.slice(1), selectedFrequencies.has(freq))));
+  toggleSeasonPanel();
+}
+function toggleSeasonPanel() {
+  const seasonal = Array.from(document.querySelectorAll('input[name="frequencies"]')).some(i => i.checked && i.value === 'seasonal');
+  seasonPanel.classList.toggle('hidden', !seasonal);
+}
+sourceField.addEventListener('change', () => { selectedVariables.clear(); selectedFrequencies.clear(); renderSourceOptions(); });
+renderSourceOptions();
+
+const requestsJsonField = document.getElementById('requestsJsonField');
+const savedRequestsPanel = document.getElementById('savedRequestsPanel');
+const savedRequestsList = document.getElementById('savedRequestsList');
+const STORAGE_KEY = 'tma_cde_saved_extraction_requests_v2';
+let savedRequests = [];
+try {
+  const restored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  if (Array.isArray(restored)) savedRequests = restored;
+} catch (e) { savedRequests = []; }
+
+function selectedValues(name) { return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i => i.value); }
+function currentExtractorRequest() {
+  const locName = document.getElementById('locationField').value.trim();
+  const lat = document.getElementById('latitudeField').value.trim();
+  const lon = document.getElementById('longitudeField').value.trim();
+  return {
+    source: sourceField.value,
+    variables: selectedValues('variables'),
+    frequencies: selectedValues('frequencies'),
+    seasons: selectedValues('seasons'),
+    custom_months: document.getElementById('customMonthsField').value.trim(),
+    start_date: document.querySelector('input[name="start_date"]').value,
+    end_date: document.querySelector('input[name="end_date"]').value,
+    locations: [{name: locName, latitude: lat, longitude: lon}]
+  };
+}
+function validateExtractorRequest(req) {
+  return req.source && req.variables.length && req.frequencies.length && req.start_date && req.end_date && req.locations[0].name && req.locations[0].latitude && req.locations[0].longitude;
+}
+function sourceLabel(key) { return (SOURCES[key] || {}).label || key; }
+function variableLabel(source, key) { return (((SOURCES[source] || {}).variables || {})[key] || {}).label || key; }
+function saveRequestsToBrowser() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRequests));
+  requestsJsonField.value = JSON.stringify(savedRequests);
+}
+function refreshSavedRequests() {
+  savedRequestsPanel.style.display = savedRequests.length ? 'block' : 'none';
+  savedRequestsList.innerHTML = '';
+  savedRequests.forEach((r, i) => {
+    const row = document.createElement('div'); row.className = 'saved-request-row';
+    const summary = document.createElement('div'); summary.className = 'saved-request-summary';
+    summary.innerHTML = `<strong>${i + 1}. ${sourceLabel(r.source)}</strong><span>${r.variables.map(v => variableLabel(r.source, v)).join(', ')} · ${r.frequencies.join(', ')} · ${r.locations[0].name} · ${r.start_date} to ${r.end_date}</span>`;
+    const actions = document.createElement('div'); actions.className = 'saved-request-actions';
+    const edit = document.createElement('button'); edit.type='button'; edit.className='secondary compact-button'; edit.textContent='Edit';
+    edit.addEventListener('click', () => editSavedRequest(i));
+    const remove = document.createElement('button'); remove.type='button'; remove.className='secondary compact-button'; remove.textContent='Remove';
+    remove.addEventListener('click', () => { savedRequests.splice(i, 1); saveRequestsToBrowser(); refreshSavedRequests(); });
+    actions.append(edit, remove); row.append(summary, actions); savedRequestsList.appendChild(row);
+  });
+  saveRequestsToBrowser();
+}
+function editSavedRequest(index) {
+  const req = savedRequests[index]; if (!req) return;
+  savedRequests.splice(index, 1);
+  sourceField.value = req.source;
+  selectedVariables.clear(); req.variables.forEach(value => selectedVariables.add(value));
+  selectedFrequencies.clear(); req.frequencies.forEach(value => selectedFrequencies.add(value));
+  renderSourceOptions();
+  document.querySelectorAll('input[name="seasons"]').forEach(input => input.checked = (req.seasons || []).includes(input.value));
+  document.getElementById('customMonthsField').value = req.custom_months || '';
+  document.querySelector('input[name="start_date"]').value = req.start_date || '';
+  document.querySelector('input[name="end_date"]').value = req.end_date || '';
+  const loc = (req.locations || [{}])[0];
+  document.getElementById('locationField').value = loc.name || '';
+  document.getElementById('latitudeField').value = loc.latitude ?? '';
+  document.getElementById('longitudeField').value = loc.longitude ?? '';
+  saveRequestsToBrowser(); refreshSavedRequests();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+document.getElementById('saveRequestBtn').addEventListener('click', () => {
+  const req = currentExtractorRequest();
+  if (!validateExtractorRequest(req)) { alert('Fill dataset, weather element, resolution, dates, location and coordinates before saving this request.'); return; }
+  savedRequests.push(req);
+  saveRequestsToBrowser(); refreshSavedRequests();
+  document.getElementById('locationField').value = '';
+  document.getElementById('latitudeField').value = '';
+  document.getElementById('longitudeField').value = '';
+});
+
+document.getElementById('clearSavedRequestsBtn').addEventListener('click', () => {
+  if (!savedRequests.length || confirm('Clear all saved extraction requests?')) {
+    savedRequests = []; saveRequestsToBrowser(); refreshSavedRequests();
+  }
+});
+
+document.getElementById('extractForm').addEventListener('submit', (event) => {
+  const current = currentExtractorRequest();
+  let payload = [...savedRequests];
+  if (validateExtractorRequest(current)) payload.push(current);
+  if (!payload.length) {
+    event.preventDefault();
+    alert('Complete the current extraction request or save at least one request first.');
+    return;
+  }
+  requestsJsonField.value = JSON.stringify(payload);
+});
+
+refreshSavedRequests();
+
+
+const searchLocationBtn = document.getElementById('searchLocationBtn');
+if (searchLocationBtn) {
+  searchLocationBtn.addEventListener('click', async () => {
+    const q = document.getElementById('locationField').value.trim();
+    const status = document.getElementById('geoStatus'); const results = document.getElementById('geoResults');
+    results.innerHTML = ''; results.classList.add('hidden');
+    if (!q) { status.textContent = 'Type a location first.'; return; }
+    status.textContent = 'Searching...';
+    try {
+      const resp = await fetch(`{{ url_for('api_geocode') }}?q=${encodeURIComponent(q)}`);
+      const data = await resp.json();
+      if (!data.ok) { status.textContent = data.error || 'No coordinates found.'; return; }
+      status.textContent = 'Select the correct result below.';
+      data.results.forEach(r => {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'geo-choice';
+        btn.textContent = `${r.name} (${r.latitude}, ${r.longitude})`;
+        btn.onclick = () => { document.getElementById('locationField').value = r.name; document.getElementById('latitudeField').value = r.latitude; document.getElementById('longitudeField').value = r.longitude; results.classList.add('hidden'); status.textContent = 'Coordinates populated.'; };
+        results.appendChild(btn);
+      });
+      results.classList.remove('hidden');
+    } catch (e) { status.textContent = 'Coordinate search failed. Enter latitude and longitude manually.'; }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card">
+  <div class="section-heading"><div><h1>Users</h1><p>Create and manage system users.</p></div><span class="badge">Admin</span></div>
+  <form class="user-form compact-user-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="users-entry-grid">
+      <div class="field {% if field_errors.fullNameField %}has-error{% endif %}"><label>Full Name</label><input name="full_name" placeholder="Full name" value="{{ form_data.full_name }}">{% if field_errors.fullNameField %}<div class="field-error">{{ field_errors.fullNameField }}</div>{% endif %}</div>
+      <div class="field {% if field_errors.emailField %}has-error{% endif %}"><label>Email</label><input name="email" type="email" placeholder="user@example.com" value="{{ form_data.email }}">{% if field_errors.emailField %}<div class="field-error">{{ field_errors.emailField }}</div>{% endif %}</div>
+      <div class="field"><label>Phone</label><input name="phone" placeholder="+255..." value="{{ form_data.phone }}"></div>
+      <div class="field {% if field_errors.roleField %}has-error{% endif %}"><label>Role</label><select name="role"><option value="user" {% if form_data.role=='user' %}selected{% endif %}>User</option><option value="admin" {% if form_data.role=='admin' %}selected{% endif %}>Admin</option></select>{% if field_errors.roleField %}<div class="field-error">{{ field_errors.roleField }}</div>{% endif %}</div>
+    </div>
+    <div class="actions user-form-actions"><button>Create User</button></div>
+  </form>
+</section>
+
+<section class="card centered-card">
+  <div class="table-wrap users-table-wrap">
+    <table class="users-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>OTP</th><th>Actions</th></tr></thead><tbody>
+    {% for row in rows %}<tr><td>{{ row.full_name }}</td><td>{{ row.email }}</td><td>{{ row.phone or '—' }}</td><td>{{ row.role }}</td><td><span class="status-badge {% if row.status %}active{% else %}disabled{% endif %}">{{ 'Active' if row.status else 'Disabled' }}</span></td><td>{{ row.otp or '—' }}</td><td class="action-cell user-actions"><a class="mini-button action-view" href="{{ url_for('view_user', user_id=row.id) }}">View</a><a class="mini-button action-edit" href="{{ url_for('edit_user', user_id=row.id) }}">Edit</a><form method="post" action="{{ url_for('admin_reset_user', user_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="mini-button action-reset">Reset OTP</button></form><form method="post" action="{{ url_for('toggle_user', user_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="mini-button action-toggle">{{ 'Disable' if row.status else 'Enable' }}</button></form><form method="post" action="{{ url_for('delete_user', user_id=row.id) }}" onsubmit="return confirm('Delete this user?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="mini-button action-delete">Delete</button></form></td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+</section>
+{% endblock %}

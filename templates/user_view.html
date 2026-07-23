@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card"><div class="section-heading"><div><h1>{{ row.full_name }}</h1><p>{{ row.email }}</p></div><a class="button secondary" href="{{ url_for('users') }}">Back to Users</a></div>
+<div class="detail-grid"><div><span>Phone</span><strong>{{ row.phone or '—' }}</strong></div><div><span>Role</span><strong>{{ row.role }}</strong></div><div><span>Status</span><strong>{{ 'Active' if row.status else 'Disabled' }}</strong></div></div></section>
+<section class="card centered-card"><h2>Recent Exports</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Dataset</th><th>Location</th><th>File</th></tr></thead><tbody>{% for e in exports %}<tr><td>{{ e.created_at }}</td><td>{{ e.source }}</td><td>{{ e.location_name }}</td><td>{{ e.output_file }}</td></tr>{% else %}<tr><td colspan="4">No exports found.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

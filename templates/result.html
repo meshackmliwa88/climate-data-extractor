@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card centered-card result-card">
+  <span class="badge">Success</span>
+  <h1>Excel Data Generated</h1>
+  <p class="muted">Your Excel data and official Data Delivery Report are ready. The Excel file includes an in-sheet QR containing the same data-delivery details as the report.</p>
+  <div class="result-meta">
+    <p><strong>File Name:</strong> {{ filename }}</p>
+    <p><strong>Customer:</strong> {{ customer_name or '—' }}</p>
+    <p><strong>Source:</strong> {{ source }}</p>
+    <p><strong>Weather Element:</strong> {{ variables|join(', ') }}</p>
+    <p><strong>Data Type:</strong> {{ frequencies|join(', ') }}</p>
+    <p><strong>Location:</strong> {{ location_name }}</p>
+    <p><strong>Period:</strong> {{ start_date }} to {{ end_date }}</p>
+    <p><strong>Verification URL:</strong> <a href="{{ verification_url }}" target="_blank">{{ verification_url }}</a></p>
+    <p><strong>Data URL:</strong> <a href="{{ data_url }}" target="_blank">{{ data_url }}</a></p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{{ download_url }}">Download Excel</a>
+    <a class="button secondary" href="{{ receipt_url }}?inline=1" target="_blank">Preview Data Delivery Report</a>
+    <a class="button secondary" href="{{ url_for('extractor', preserve=1) }}">Generate Another File</a>
+  </div>
+</section>
+{% endblock %}

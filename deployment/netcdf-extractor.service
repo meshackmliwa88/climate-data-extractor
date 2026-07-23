@@ -1,0 +1,22 @@
+[Unit]
+Description=Climate Data Extractor - Satellite & Reanalysis Platform
+After=network.target
+
+[Service]
+User=cde
+Group=www-data
+WorkingDirectory=/opt/climate-data-extractor
+EnvironmentFile=-/etc/climate-data-extractor.env
+Environment="CDE_DASK_WORKERS=2"
+Environment="CDE_MAX_PRODUCT_REQUESTS=1"
+Environment="OMP_NUM_THREADS=1"
+Environment="OPENBLAS_NUM_THREADS=1"
+Environment="MKL_NUM_THREADS=1"
+Environment="NUMEXPR_NUM_THREADS=1"
+Environment="MALLOC_ARENA_MAX=2"
+ExecStart=/opt/climate-data-extractor/.venv/bin/python -m gunicorn --worker-class gthread --workers 1 --threads 2 --timeout 0 --graceful-timeout 120 --keep-alive 5 --max-requests 50 --max-requests-jitter 10 --bind 127.0.0.1:5000 app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

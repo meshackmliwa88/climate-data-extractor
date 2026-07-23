@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#125565">
+  <title>CDE | Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=public">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/utc_clock.css') }}?v=public">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth_pages.css') }}?v=public">
+</head>
+<body class="auth-modern-body">
+  <main class="auth-modern-page">
+    <div class="auth-modern-shell">
+      <section class="auth-modern-side" aria-label="CDE platform information">
+        <div class="auth-modern-badge"><span class="auth-modern-badge-icon" aria-hidden="true">☁</span>Climate Data Extractor</div>
+        <h1>Welcome to the Climate Data Extractor</h1>
+        <p class="auth-modern-description">Access a centralized platform for discovering, extracting, processing and visualizing satellite and reanalysis climate data.</p>
+        <div class="auth-modern-feature-list">
+          <article class="auth-modern-feature-card"><div class="auth-modern-feature-icon observations" aria-hidden="true">⌁</div><div><strong>Climate Data Access</strong><span>Extract time-series data by location, period and weather element.</span></div></article>
+          <article class="auth-modern-feature-card"><div class="auth-modern-feature-icon products" aria-hidden="true">▥</div><div><strong>Maps, Graphs and Products</strong><span>Generate climate plots, summaries, indices and downloadable products.</span></div></article>
+          <article class="auth-modern-feature-card"><div class="auth-modern-feature-icon delivery" aria-hidden="true">➤</div><div><strong>Reproducible Outputs</strong><span>Create structured Excel, PNG and verification outputs from configured climate datasets.</span></div></article>
+        </div>
+        <div class="auth-modern-clock" aria-label="Current UTC time"><div class="utc-clock-title">UTC Clock</div><div class="utc-clock-time" id="utc-clock-time">--:--:-- UTC</div><div class="utc-clock-date" id="utc-clock-date">Loading...</div></div>
+      </section>
+      <section class="auth-modern-form-area">
+        <div class="auth-modern-form-box">
+          <div class="auth-modern-brand brand-without-logo"><div class="public-brand-mark" aria-hidden="true">CDE</div><h2>Sign in to CDE</h2><p>Use your registered account credentials or valid one-time password to continue.</p></div>
+          {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="auth-modern-alert {{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+          {% if inline_error %}<div class="auth-modern-alert error" role="alert">{{ inline_error }}</div>{% endif %}
+          <form class="auth-modern-form" method="post" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="auth-modern-field"><label for="email">Email Address</label><div class="auth-modern-input-group"><span class="auth-modern-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span><input id="email" name="email" type="email" value="{{ email or '' }}" placeholder="Enter your email address" autocomplete="username" required autofocus></div></div>
+            <div class="auth-modern-field"><label for="password">Password or OTP</label><div class="auth-modern-input-group"><span class="auth-modern-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v10h14V10a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V6Zm3 9.73V18h-2v-2.27a2 2 0 1 1 2 0Z"/></svg></span><input id="password" name="password" type="password" placeholder="Enter your password or six-digit OTP" autocomplete="current-password" required></div></div>
+            <button class="auth-modern-submit" type="submit">Login</button>
+            <div class="auth-modern-links"><a href="{{ url_for('forgot_password') }}">Forgot Password?</a><span>Climate Data Extractor</span></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='js/utc_clock.js') }}?v=public"></script>
+</body>
+</html>

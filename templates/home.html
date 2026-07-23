@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="dashboard-stats centered-card">
+  <div class="stat-card"><span>Data Sources</span><strong>{{ total_sources }}</strong><p>CHIRPS and ERA5 data</p></div>
+  <div class="stat-card"><span>Variables</span><strong>{{ total_variables }}</strong><p>Rainfall, temperature, wind, humidity, pressure and cloud</p></div>
+  <div class="stat-card"><span>Available Stores</span><strong>{{ available_files }}</strong><p>Detected optimized climate data stores</p></div>
+  <div class="stat-card"><span>Output Format</span><strong>Excel</strong><p>Hourly, daily, monthly, annual and seasonal</p></div>
+</section>
+
+<section class="card centered-card">
+  <h2>Services Delivered by the System</h2>
+  <p class="muted">CDE supports operational extraction of satellite and reanalysis climate data.</p>
+  <div class="service-grid grid three">
+    <div class="service-card"><div class="service-icon">🛰️</div><h3>Satellite Rainfall</h3><p>Extract CHIRPS rainfall time series for Tanzania point locations.</p></div>
+    <div class="service-card"><div class="service-icon">🌡️</div><h3>ERA5 Reanalysis</h3><p>Extract temperature, humidity, wind, precipitation, pressure and cloud variables.</p></div>
+    <div class="service-card"><div class="service-icon">📄</div><h3>Data Delivery Report</h3><p>Download an official PDF Data Delivery Report with QR verification.</p></div>
+  </div>
+</section>
+{% endblock %}

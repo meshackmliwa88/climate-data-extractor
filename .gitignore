@@ -1,0 +1,50 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Runtime data and generated outputs
+storage/
+logs/*
+!logs/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+*.parquet
+*.nc
+*.nc4
+*.zarr/
+*.grib
+*.grb
+*.tif
+*.tiff
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.xlsx
+*.xls
+*.pdf
+
+# Local deployment and editor files
+*.bak
+*.backup
+*.before-*
+.vscode/
+.idea/
+.DS_Store

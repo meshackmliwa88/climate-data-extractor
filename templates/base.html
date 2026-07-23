@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CDE | Climate Data Extractor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/utc_clock.css') }}">
+</head>
+<body>
+<div class="utc-clock-box">
+  <div class="utc-clock-title">UTC Clock</div>
+  <div class="utc-clock-time" id="utc-clock-time">--:--:-- UTC</div>
+  <div class="utc-clock-date" id="utc-clock-date">Loading...</div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand cde-sidebar-brand brand-without-logo">
+      <div><strong>CDE</strong><span>Satellite &amp; Reanalysis</span></div>
+    </div>
+    <nav>
+      <a class="nav-item {% if request.endpoint == 'home' %}active{% endif %}" href="{{ url_for('home') }}"><span>🏠</span>Home</a>
+      <a class="nav-item {% if request.endpoint in ['plots','extractor','analysis','indices'] %}active{% endif %}" href="{{ url_for('plots') }}"><span>🛰️</span>Data Extractor &amp; Products</a>
+      <a class="nav-item {% if request.endpoint == 'available_variables' %}active{% endif %}" href="{{ url_for('available_variables') }}"><span>📚</span>Available Variables</a>
+      <a class="nav-item {% if request.endpoint == 'datasets_documentation' %}active{% endif %}" href="{{ url_for('datasets_documentation') }}"><span>📘</span>Datasets Documentation</a>
+      {% if current_user and current_user['role'] == 'admin' %}
+      <a class="nav-item {% if request.endpoint in ['users','view_user','edit_user'] %}active{% endif %}" href="{{ url_for('users') }}"><span>👥</span>Users</a>
+      {% endif %}
+      <a class="nav-item {% if request.endpoint == 'change_password' %}active{% endif %}" href="{{ url_for('change_password') }}"><span>🔐</span>Change Password</a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar topbar-no-clock topbar-without-logos">
+      <div class="title-block navbar-cde-title">
+        <h1>Climate Data Extractor <span>(CDE)</span></h1>
+        <p>Satellite and Reanalysis Data Access Platform</p>
+      </div>
+      <details class="user-menu-wrap header-user-menu">
+        <summary class="user-box header-user-box">
+          <div class="user-info-text">
+            <strong>{{ current_user['full_name'] if current_user else 'Guest' }}</strong>
+            <span>{{ current_user['role']|upper if current_user else '' }}</span>
+          </div>
+          <div class="user-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img" aria-label="User">
+              <circle cx="24" cy="18" r="7" fill="none" stroke="currentColor" stroke-width="3"/>
+              <path d="M10 38c2.2-8 8-12 14-12s11.8 4 14 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </summary>
+        {% if current_user %}
+        <div class="user-dropdown">
+          <div class="user-dropdown-email">{{ current_user['email'] }}</div>
+          <a class="logout-link" href="{{ url_for('logout') }}"><span>⏻</span> Log Out</a>
+        </div>
+        {% endif %}
+      </details>
+    </header>
+
+    <div class="content-wrap">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+<script src="{{ url_for('static', filename='js/utc_clock.js') }}"></script>
+<script src="{{ url_for('static', filename='js/weather_names.js') }}"></script>
+</body>
+</html>
